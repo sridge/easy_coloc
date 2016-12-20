@@ -20,7 +20,7 @@ class easy_coloc():
 
 	def define_obs_position_from_gridded(self,obs_datafile,obs_var,level=None, frame=None, coord_names=['lon','lat'],spval=None):
 		# read gridded observation data
-		data_obs     = _ncdf.read_field(obs_datafile,obs_var,level=level,frame=frame)
+		data_field     = _ncdf.read_field(obs_datafile,obs_var,level=level,frame=frame)
 		# read observation grid 
 		lon_gridded  = _ncdf.read_field(obs_datafile,coord_names[0])
 		lat_gridded  = _ncdf.read_field(obs_datafile,coord_names[1])
@@ -32,16 +32,17 @@ class easy_coloc():
 			self.lon_gridded_2d = lon_gridded ; self.lat_gridded_2d = lat_gridded
 
 		if spval == None:
-			jindex_list, iindex_list = _np.where(data_obs.mask == False)
+			jindex_list, iindex_list = _np.where(data_field.mask == False)
 			nindex = len(jindex_list)
-			lon_obs = _np.empty((nindex)) ; lat_obs = _np.empty((nindex))
+			lon_obs = _np.empty((nindex)) ; lat_obs = _np.empty((nindex)) ; data_obs = _np.empty((nindex))
 			for k in _np.arange(nindex):
 				lon_obs[k] = self.lon_gridded_2d[jindex_list[k], iindex_list[k]]
 				lat_obs[k] = self.lat_gridded_2d[jindex_list[k], iindex_list[k]]
+				data_obs[k] = data_field[jindex_list[k], iindex_list[k]]
 		else:
 			exit('TO DO')
 
-		return lon_obs, lat_obs, jindex_list, iindex_list
+		return lon_obs, lat_obs, data_obs, jindex_list, iindex_list
 
 	def interpolate_model_onto_obs_space(self,lon_obs,lat_obs,model_datafile,model_var,level=None,frame=None,spval=1.0e+15):
 
@@ -79,3 +80,21 @@ class easy_coloc():
 
 
 
+	def define_obs_position_from_text(self,data_obs_file,lon_col,lat_col,offset_line=0,separator=',',if_found=None):
+		f = open(data_obs_file,'r')
+		lines = f.readlines()
+		f.close()
+
+		lon_obs = [] ; lat_obs = []
+		for line in lines[offset_line:]:
+			if if_found is not None:
+				if line.find(if_found) != -1:
+					lon_obs.append(float(line.replace(separator,' ').split()[lon_col]))
+					lat_obs.append(float(line.replace(separator,' ').split()[lat_col]))
+			else:
+				lon_obs.append(float(line.replace(separator,' ').split()[lon_col]))
+				lat_obs.append(float(line.replace(separator,' ').split()[lat_col]))
+
+		lon_obs = _np.array(lon_obs)
+		lat_obs = _np.array(lat_obs)
+		return lon_obs, lat_obs

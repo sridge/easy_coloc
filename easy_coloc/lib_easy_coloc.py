@@ -98,3 +98,9 @@ class easy_coloc():
 		lon_obs = _np.array(lon_obs)
 		lat_obs = _np.array(lat_obs)
 		return lon_obs, lat_obs
+
+	def write_to_file(self,fileout,lon,lat,data):
+		f =  open(fileout,'w')
+		for k in _np.arange(len(lon)):
+			f.write(str(lon[k]) + ',' + str(lat[k]) + ',' + str(data[k]) + '\n' )
+		f.close()

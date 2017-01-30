@@ -30,12 +30,12 @@ roms2o2noaa.write_to_file('roms_onto_o2noaa_aug.txt',lon_obs_aug,lat_obs_aug,out
 
 # trick if we want to project on a season
 # concat the obs points for all 3 months
-#lon_obs = np.concatenate((lon_obs_june, lon_obs_july, lon_obs_aug))
-#lat_obs = np.concatenate((lat_obs_june, lat_obs_july, lat_obs_aug))
-# project model data onto observation space
-#out     = roms2o2noaa.interpolate_model_onto_obs_space(lon_obs,lat_obs,roms_data,'o2',level=0,frame=0,spval=1.0e+15)
-# write model data projected onto obs space into text file
-#roms2o2noaa.write_to_file('roms_onto_o2noaa.txt',lon_obs,lat_obs,out)
+lon_obs = np.concatenate((lon_obs_june, lon_obs_july, lon_obs_aug))
+lat_obs = np.concatenate((lat_obs_june, lat_obs_july, lat_obs_aug))
+# project model bathy onto observation space
+out     = roms2o2noaa.interpolate_model_onto_obs_space(lon_obs,lat_obs,roms_grid,'h',spval=1.0e+15)
+# write model bathy projected onto obs space into text file
+roms2o2noaa.write_to_file('bathy_roms_onto_o2noaa.txt',lon_obs,lat_obs,out)
 
 #----------plotting positions ---------------------
 #plt.figure()

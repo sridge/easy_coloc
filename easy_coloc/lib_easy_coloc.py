@@ -99,8 +99,36 @@ class easy_coloc():
 		lat_obs = _np.array(lat_obs)
 		return lon_obs, lat_obs
 
+	def read_obs_data_from_text(self,data_obs_file,lon_col,lat_col,data_col,offset_line=0,separator=',',if_found=None):
+		f = open(data_obs_file,'r')
+		lines = f.readlines()
+		f.close()
+
+		lon_obs = [] ; lat_obs = [] ; data_obs = []
+		for line in lines[offset_line:]:
+			if if_found is not None:
+				if line.find(if_found) != -1:
+					lon_obs.append(float(line.replace(separator,' ').split()[lon_col]))
+					lat_obs.append(float(line.replace(separator,' ').split()[lat_col]))
+					data_obs.append(float(line.replace(separator,' ').split()[data_col]))
+			else:
+				lon_obs.append(float(line.replace(separator,' ').split()[lon_col]))
+				lat_obs.append(float(line.replace(separator,' ').split()[lat_col]))
+				data_obs.append(float(line.replace(separator,' ').split()[data_col]))
+
+		lon_obs = _np.array(lon_obs)
+		lat_obs = _np.array(lat_obs)
+		data_obs = _np.array(data_obs)
+		return lon_obs, lat_obs, data_obs
+
 	def write_to_file(self,fileout,lon,lat,data):
 		f =  open(fileout,'w')
 		for k in _np.arange(len(lon)):
 			f.write(str(lon[k]) + ',' + str(lat[k]) + ',' + str(data[k]) + '\n' )
+		f.close()
+
+	def write_to_file_two_dataset(self,fileout,lon,lat,data1,data2):
+		f =  open(fileout,'w')
+		for k in _np.arange(len(lon)):
+			f.write(str(lon[k]) + ',' + str(lat[k]) + ',' + str(data1[k]) + ',' + str(data2[k]) +'\n' )
 		f.close()

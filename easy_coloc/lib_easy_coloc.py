@@ -44,6 +44,22 @@ class easy_coloc():
 
 		return lon_obs, lat_obs, data_obs, jindex_list, iindex_list
 
+	def define_obs_position_from_gridded_simple(self,obs_datafile, coord_names=['lon','lat']):
+		# read observation grid 
+		lon_gridded  = _ncdf.read_field(obs_datafile,coord_names[0])
+		lat_gridded  = _ncdf.read_field(obs_datafile,coord_names[1])
+
+		# make grid 2d
+		if len(lon_gridded.shape) == 1:
+			self.lon_gridded_2d,self.lat_gridded_2d = _np.meshgrid(lon_gridded,lat_gridded)
+		else:
+			self.lon_gridded_2d = lon_gridded ; self.lat_gridded_2d = lat_gridded
+
+		lon_obs = self.lon_gridded_2d.flatten()
+		lat_obs = self.lat_gridded_2d.flatten()
+		return lon_obs, lat_obs
+
+
 	def interpolate_model_onto_obs_space(self,lon_obs,lat_obs,model_datafile,model_var,level=None,frame=None,spval=1.0e+15):
 
 		data_model = _ncdf.read_field(model_datafile,model_var,level=level,frame=frame)
@@ -132,3 +148,17 @@ class easy_coloc():
 		for k in _np.arange(len(lon)):
 			f.write(str(lon[k]) + ',' + str(lat[k]) + ',' + str(data1[k]) + ',' + str(data2[k]) +'\n' )
 		f.close()
+
+	def write_to_file_with_date(self,fileout,lon,lat,data,its_date,writespval=True,spval=1.0e+15):
+		''' write data with date flag '''
+		f =  open(fileout,'w')
+		for k in _np.arange(len(lon)):
+			if writespval:
+				f.write(str(its_date.year) + ',' + str(its_date.month) + ',' + str(its_date.day) + ',' + str(lon[k]) + ',' + str(lat[k]) + ',' + str(data[k]) + '\n' )
+			else:
+				if not data[k] == spval:
+					f.write(str(its_date.year) + ',' + str(its_date.month) + ',' + str(its_date.day) + ',' + str(lon[k]) + ',' + str(lat[k]) + ',' + str(data[k]) + '\n' )
+				else:
+					pass
+		f.close()
+

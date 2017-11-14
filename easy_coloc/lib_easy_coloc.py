@@ -59,8 +59,24 @@ class easy_coloc():
 		lat_obs = self.lat_gridded_2d.flatten()
 		return lon_obs, lat_obs
 
+	def compute_interpolator(self,lon_obs,lat_obs):
+		''' return interpolator, special request from Ze Skud '''
+		# create field object for model data
+		field_model = _ESMF.Field(self.model_grid, staggerloc=_ESMF.StaggerLoc.CENTER)
+		# import obs location into ESMF locstream object
+                locstream_obs = _ESMF.LocStream(len(lon_obs), coord_sys=_ESMF.CoordSys.SPH_DEG)
+                locstream_obs["ESMF:Lon"] = lon_obs[:]
+                locstream_obs["ESMF:Lat"] = lat_obs[:]
+		field_obs = _ESMF.Field(locstream_obs)
+		
+		interpolator = _ESMF.Regrid(field_model, field_obs,
+                                            regrid_method=_ESMF.RegridMethod.BILINEAR,
+		                            unmapped_action=_ESMF.UnmappedAction.IGNORE,
+		                            src_mask_values = self.mask_values) # esmf uses mask value, not spval
+		return interpolator
+		
 
-	def interpolate_model_onto_obs_space(self,lon_obs,lat_obs,model_datafile,model_var,level=None,frame=None,spval=1.0e+15):
+	def interpolate_model_onto_obs_space(self,lon_obs,lat_obs,model_datafile,model_var,level=None,frame=None,spval=1.0e+15,interpolator=None):
 
 		data_model = _ncdf.read_field(model_datafile,model_var,level=level,frame=frame)
 		
@@ -74,7 +90,8 @@ class easy_coloc():
 
 		field_obs = _ESMF.Field(locstream_obs)
 		
-		interpolator = _ESMF.Regrid(field_model, field_obs,
+		if interpolator is None:
+			interpolator = _ESMF.Regrid(field_model, field_obs,
                                                         regrid_method=_ESMF.RegridMethod.BILINEAR,
 							unmapped_action=_ESMF.UnmappedAction.IGNORE,
 		                                        src_mask_values = self.mask_values) # esmf uses mask value, not spval

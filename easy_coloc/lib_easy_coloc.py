@@ -101,6 +101,38 @@ class easy_coloc():
 		data_model_interp[_np.where(data_model_interp == 0)] = spval
 		return data_model_interp
 
+	def interpolate_array_onto_obs_space(self,lon_obs,lat_obs,data_model,spval=1.0e+15,interpolator=None):
+		''' interpolate a pre-computed array onto observation location '''
+
+		if np.ma.is_masked(data_model):
+			data_values = data_model.data
+			mask_local = data_model.mask
+		else:
+			data_values = data_model
+			mask_local = self.mask_values
+
+		# create field object for model data
+		field_model = _ESMF.Field(self.model_grid, staggerloc=_ESMF.StaggerLoc.CENTER)
+		field_model.data[:] = data_values.transpose()
+		# import obs location into ESMF locstream object
+                locstream_obs = _ESMF.LocStream(len(lon_obs), coord_sys=_ESMF.CoordSys.SPH_DEG)
+                locstream_obs["ESMF:Lon"] = lon_obs[:]
+                locstream_obs["ESMF:Lat"] = lat_obs[:]
+
+		field_obs = _ESMF.Field(locstream_obs)
+		
+		if interpolator is None:
+			interpolator = _ESMF.Regrid(field_model, field_obs,
+                                                        regrid_method=_ESMF.RegridMethod.BILINEAR,
+							unmapped_action=_ESMF.UnmappedAction.IGNORE,
+		                                        src_mask_values = mask_local) # esmf uses mask value, not spval
+
+		field_obs = interpolator(field_model, field_obs)
+		data_model_interp = field_obs.data.copy()
+		data_model_interp[_np.where(data_model_interp == 0)] = spval
+		return data_model_interp
+		
+
 	def reshape_interpolated_data(self,jindex_list,iindex_list,data_model_interp,spval=1.0e+15):
 		data_model_reshape = _np.empty((self.lon_gridded_2d.shape))
 		data_model_reshape[:] = spval

@@ -104,7 +104,7 @@ class easy_coloc():
 	def interpolate_array_onto_obs_space(self,lon_obs,lat_obs,data_model,spval=1.0e+15,interpolator=None):
 		''' interpolate a pre-computed array onto observation location '''
 
-		if np.ma.is_masked(data_model):
+		if _np.ma.is_masked(data_model):
 			data_values = data_model.data
 			mask_local = data_model.mask
 		else:

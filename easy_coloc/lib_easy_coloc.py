@@ -73,6 +73,9 @@ class easy_coloc():
                                             regrid_method=_ESMF.RegridMethod.BILINEAR,
 		                            unmapped_action=_ESMF.UnmappedAction.IGNORE,
 		                            src_mask_values = self.mask_values) # esmf uses mask value, not spval
+		field_model.destroy()
+		locstream_obs.destroy()
+		field_obs.destroy()
 		return interpolator
 
 
@@ -99,6 +102,11 @@ class easy_coloc():
 		field_obs = interpolator(field_model, field_obs)
 		data_model_interp = field_obs.data.copy()
 		data_model_interp[_np.where(data_model_interp == 0)] = spval
+
+		field_model.destroy()
+		locstream_obs.destroy()
+		field_obs.destroy()
+
 		return data_model_interp
 
 	def interpolate_array_onto_obs_space(self,lon_obs,lat_obs,data_model,spval=1.0e+15,interpolator=None):
@@ -130,6 +138,11 @@ class easy_coloc():
 		field_obs = interpolator(field_model, field_obs)
 		data_model_interp = field_obs.data.copy()
 		data_model_interp[_np.where(data_model_interp == 0)] = spval
+
+		field_model.destroy()
+		locstream_obs.destroy()
+		field_obs.destroy()
+
 		return data_model_interp
 
 

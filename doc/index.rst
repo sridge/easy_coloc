@@ -3,13 +3,16 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to easy_coloc's documentation!
-======================================
+easy_coloc: projecting model outputs onto observations
+======================================================
 
-**easy_coloc** uses the ESMF_ library to interpolate gridded data, such as Ocean
+**easy_coloc** uses the ESMF_ library to project gridded data, such as Ocean
 General Circulation Model outputs onto observations. Observation points can
 be provided in a csv or gridded netcdf file. Gridded outputs can then be
 projected onto the observation space using the ESMF_ locstream procedure.
+
+Contents
+--------
 
 .. toctree::
    :maxdepth: 1
@@ -20,9 +23,9 @@ projected onto the observation space using the ESMF_ locstream procedure.
 .. _ESMF: https://www.earthsystemcog.org/projects/esmf/
 
 
-Indices and tables
-==================
+.. Indices and tables
+.. ==================
 
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+.. * :ref:`genindex`
+.. * :ref:`modindex`
+.. * :ref:`search`

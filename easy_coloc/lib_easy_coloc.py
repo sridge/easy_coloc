@@ -21,7 +21,7 @@ class easy_coloc():
 	def define_obs_position_from_gridded(self,obs_datafile,obs_var,level=None, frame=None, coord_names=['lon','lat'],spval=None):
 		# read gridded observation data
 		data_field     = _ncdf.read_field(obs_datafile,obs_var,level=level,frame=frame)
-		# read observation grid 
+		# read observation grid
 		lon_gridded  = _ncdf.read_field(obs_datafile,coord_names[0])
 		lat_gridded  = _ncdf.read_field(obs_datafile,coord_names[1])
 
@@ -45,7 +45,7 @@ class easy_coloc():
 		return lon_obs, lat_obs, data_obs, jindex_list, iindex_list
 
 	def define_obs_position_from_gridded_simple(self,obs_datafile, coord_names=['lon','lat']):
-		# read observation grid 
+		# read observation grid
 		lon_gridded  = _ncdf.read_field(obs_datafile,coord_names[0])
 		lat_gridded  = _ncdf.read_field(obs_datafile,coord_names[1])
 
@@ -64,32 +64,32 @@ class easy_coloc():
 		# create field object for model data
 		field_model = _ESMF.Field(self.model_grid, staggerloc=_ESMF.StaggerLoc.CENTER)
 		# import obs location into ESMF locstream object
-                locstream_obs = _ESMF.LocStream(len(lon_obs), coord_sys=_ESMF.CoordSys.SPH_DEG)
-                locstream_obs["ESMF:Lon"] = lon_obs[:]
-                locstream_obs["ESMF:Lat"] = lat_obs[:]
+		locstream_obs = _ESMF.LocStream(len(lon_obs), coord_sys=_ESMF.CoordSys.SPH_DEG)
+		locstream_obs["ESMF:Lon"] = lon_obs[:]
+		locstream_obs["ESMF:Lat"] = lat_obs[:]
 		field_obs = _ESMF.Field(locstream_obs)
-		
+
 		interpolator = _ESMF.Regrid(field_model, field_obs,
                                             regrid_method=_ESMF.RegridMethod.BILINEAR,
 		                            unmapped_action=_ESMF.UnmappedAction.IGNORE,
 		                            src_mask_values = self.mask_values) # esmf uses mask value, not spval
 		return interpolator
-		
+
 
 	def interpolate_model_onto_obs_space(self,lon_obs,lat_obs,model_datafile,model_var,level=None,frame=None,spval=1.0e+15,interpolator=None):
 
 		data_model = _ncdf.read_field(model_datafile,model_var,level=level,frame=frame)
-		
+
 		# create field object for model data
 		field_model = _ESMF.Field(self.model_grid, staggerloc=_ESMF.StaggerLoc.CENTER)
 		field_model.data[:] = data_model.transpose()
 		# import obs location into ESMF locstream object
-                locstream_obs = _ESMF.LocStream(len(lon_obs), coord_sys=_ESMF.CoordSys.SPH_DEG)
-                locstream_obs["ESMF:Lon"] = lon_obs[:]
-                locstream_obs["ESMF:Lat"] = lat_obs[:]
+		locstream_obs = _ESMF.LocStream(len(lon_obs), coord_sys=_ESMF.CoordSys.SPH_DEG)
+		locstream_obs["ESMF:Lon"] = lon_obs[:]
+		locstream_obs["ESMF:Lat"] = lat_obs[:]
 
 		field_obs = _ESMF.Field(locstream_obs)
-		
+
 		if interpolator is None:
 			interpolator = _ESMF.Regrid(field_model, field_obs,
                                                         regrid_method=_ESMF.RegridMethod.BILINEAR,
@@ -115,12 +115,12 @@ class easy_coloc():
 		field_model = _ESMF.Field(self.model_grid, staggerloc=_ESMF.StaggerLoc.CENTER)
 		field_model.data[:] = data_values.transpose()
 		# import obs location into ESMF locstream object
-                locstream_obs = _ESMF.LocStream(len(lon_obs), coord_sys=_ESMF.CoordSys.SPH_DEG)
-                locstream_obs["ESMF:Lon"] = lon_obs[:]
-                locstream_obs["ESMF:Lat"] = lat_obs[:]
+		locstream_obs = _ESMF.LocStream(len(lon_obs), coord_sys=_ESMF.CoordSys.SPH_DEG)
+		locstream_obs["ESMF:Lon"] = lon_obs[:]
+		locstream_obs["ESMF:Lat"] = lat_obs[:]
 
 		field_obs = _ESMF.Field(locstream_obs)
-		
+
 		if interpolator is None:
 			interpolator = _ESMF.Regrid(field_model, field_obs,
                                                         regrid_method=_ESMF.RegridMethod.BILINEAR,
@@ -131,7 +131,7 @@ class easy_coloc():
 		data_model_interp = field_obs.data.copy()
 		data_model_interp[_np.where(data_model_interp == 0)] = spval
 		return data_model_interp
-		
+
 
 	def reshape_interpolated_data(self,jindex_list,iindex_list,data_model_interp,spval=1.0e+15):
 		data_model_reshape = _np.empty((self.lon_gridded_2d.shape))

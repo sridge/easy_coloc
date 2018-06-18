@@ -27,7 +27,7 @@ for year in np.arange(fyear,lyear+1):
 	cyear=str(year)
 	listfiles = get_output(' ls ' + roms_data_root + cyear + ' | grep dia ' )
 	for tfile in listfiles:
-		print 'working on file ', tfile
+		print('working on file ', tfile)
 		datestring = tfile.replace('_',' ').split()[2].replace('.nc','')
 		date = dt.datetime.strptime(datestring,'%Y-%m-%dT%H:%M:%S')
 		roms_data = roms_data_root + cyear + '/' + tfile

@@ -1,8 +1,6 @@
 import os
-from numpy.distutils.core import setup, Extension
-
-#fill_msg_grid    = Extension(name = 'brushcutter.fill_msg_grid',
-#                             sources = ['brushcutter/f90/fill_msg_grid.f90'])
+import setuptools
+from distutils.core import setup
 
 setup(
     name = "easy_coloc",
@@ -13,8 +11,7 @@ setup(
     license = "GPLv3",
     keywords = "ocean modeling / observations",
     url = "",
-    packages=['easy_coloc'] #,
-#    ext_modules = [fill_msg_grid]
+    packages=['easy_coloc']
 )
 
 

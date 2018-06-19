@@ -8,10 +8,17 @@ Requirements
 
     conda install -c conda-forge esmpy
 
+Latest stable with pip
+^^^^^^^^^^^^^^^^^^^^^^
+
+For the latest stable build, use::
+
+   pip install easy_coloc
+
 Installation from github
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-For the lastest version, use::
+For the development version, use::
 
     git clone https://github.com/raphaeldussin/easy_coloc.git
     cd easy_coloc

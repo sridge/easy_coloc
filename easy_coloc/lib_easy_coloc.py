@@ -61,11 +61,9 @@ class projection():
         level : int
 
         '''
-        # not sure this is doing what I'm thinking
-        if mask_value is not None:
-            self.mask_values = _np.array([mask_value])
-        else:
-            self.mask_values = _np.array([0])
+        # TO DO: ideally we'd like to use the src_mask_values property
+        # of the ESMF Regridder. But that requires creating an object for each level
+        # It seems that setting the masked points to np.nan does the work at lower cost
 
         # create field object for model data
         field_model = _ESMF.Field(self.model_grid, staggerloc=_ESMF.StaggerLoc.CENTER)
@@ -74,8 +72,9 @@ class projection():
 
         interpolator = _ESMF.Regrid(field_model, field_obs,
                                     regrid_method=_ESMF.RegridMethod.BILINEAR,
-                                    unmapped_action=_ESMF.UnmappedAction.IGNORE,
-                                    src_mask_values = self.mask_values) # esmf uses mask value, not spval
+                                    unmapped_action=_ESMF.UnmappedAction.IGNORE)#,
+                                    #src_mask_values = self.mask_values) # esmf uses mask value, not spval
+
         if type(data) != 'numpy.array':
             data = data.values
 
@@ -86,7 +85,12 @@ class projection():
 
         for kframe in _np.arange(nframes):
             for klevel in _np.arange(nlevels):
-                field_model.data[:] = data[kframe,klevel,:,:].transpose()
+                datain = data[kframe,klevel,:,:].transpose()
+                if mask_value is not None:
+                    datain[_np.where(datain == mask_value)] = _np.nan # ugly, cf above
+
+                field_model.data[:] = datain
+
                 # run the interpolator
                 field_obs = interpolator(field_model, field_obs)
                 data_model_interp = field_obs.data.copy()

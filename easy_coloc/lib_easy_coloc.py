@@ -43,7 +43,7 @@ class projection():
         self.model_grid.coords[_ESMF.StaggerLoc.CENTER]
         self.model_grid.coords[_ESMF.StaggerLoc.CENTER][0][:]=lon_src.T
         self.model_grid.coords[_ESMF.StaggerLoc.CENTER][1][:]=lat_src.T
-        self.model_grid.is_sphere=False
+        self.model_grid.is_sphere=from_global
 
         # import obs location into ESMF locstream object
         self.nobs = len(lon_obs)

@@ -78,10 +78,22 @@ class projection():
         if type(data) != 'numpy.array':
             data = data.values
 
-        nframes=data.shape[0]
-        nlevels=data.shape[1]
+        if len(data.shape) == 4: # T,Z,Y,X
+            nframes, nlevels, ny, nx = data.shape
+            nlevels=data.shape[1]
+        elif len(data.shape) == 3: #Z,Y,X
+            nframes=1
+            nlevels, ny, nx = data.shape
+        elif len(data.shape) == 2: #Y,X
+            nframes=1
+            nlevels=1
+            ny, nx = data.shape
+        else:
+            print('this will fail')
 
-        data_out = _np.empty((nframes,nlevels,self.nobs))
+        data = _np.reshape(data, (nframes, nlevels, ny, nx))
+
+        data_out = _np.empty((nframes, nlevels, self.nobs))
 
         for kframe in _np.arange(nframes):
             for klevel in _np.arange(nlevels):

@@ -8,5 +8,6 @@ dependencies:
   - pytest
   - esmpy
   - pandas
+  - netcdf4
   - pip:
     - pytest-datafiles

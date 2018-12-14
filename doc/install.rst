@@ -8,6 +8,10 @@ Requirements
 
     conda install -c conda-forge esmpy
 
+as well as the following packages::
+
+    conda install xarray numpy pandas
+
 Latest stable with pip
 ^^^^^^^^^^^^^^^^^^^^^^
 

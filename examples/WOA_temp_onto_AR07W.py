@@ -6,10 +6,10 @@ import matplotlib.pylab as plt
 from matplotlib import cm
 
 # load stations information from csv file
-ar07w = pd.read_csv('../data/AR07W_stations.txt',skipinitialspace=True)
+ar07w = pd.read_csv('../easy_coloc/test/test_files/AR07W_stations.txt',skipinitialspace=True)
 
 # load gridded dataset
-ds = xr.open_dataset('../data/woa_labrador.nc',decode_times=False)
+ds = xr.open_dataset('../easy_coloc/test/test_files/woa_labrador.nc',decode_times=False)
 
 # create source grid and target section objects
 # this requires lon,lat from stations and the source grid dataset containing lon,lat

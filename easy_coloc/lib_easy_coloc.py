@@ -102,6 +102,12 @@ class projection():
                          mask_value,
                          member='member', time='time',
                          depth='lev'):
+
+            # create field object for model data
+            field_model_local = _ESMF.Field(self.model_grid,
+                                            staggerloc=_ESMF.StaggerLoc.CENTER)
+            # create field object for observation locations
+            field_obs_local = _ESMF.Field(self.locstream_obs)
             # this is the eager part
             datain = data.isel({member: km, time: kt, depth: kz}).values
             datain = datain.tranpose() # needed for ESMPy, could be done more elegantly
@@ -109,10 +115,12 @@ class projection():
                 # ugly fix, cf note above
                 datain[_np.where(datain == mask_value)] = _np.nan
             # feed it to ESMPy structure
-            field_model.data[:] = datain
+            field_model_local.data[:] = datain
             # run the interpolator
-            field_obs = interpol(field_model, field_obs)
-            data_model_interp = field_obs.data.copy()
+            field_obs_local = interpol(field_model_local, field_obs_local)
+            data_model_interp = field_obs_local.data.copy()
+            field_model_local.destroy()
+            field_obs_local.destroy()
             return data_model_interp
 
         chunks = (1, 1, 1, self.nobs)
@@ -124,7 +132,7 @@ class projection():
         name = 'chunk-' + _uuid.uuid4()
         dsk = {(name, mem, rec, lev, 0, 0): (interp_chunk, lev, rec, mem)
             for lev in range(nlev)
-            for rec in range(nrec)}
+            for rec in range(nrec)
             for mem in range(nmem)}
 
         out = _dsa.Array(dsk, name, chunks,

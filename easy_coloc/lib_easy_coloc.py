@@ -1,7 +1,10 @@
 import ESMF as _ESMF
 import numpy as _np
 import pandas as pd
+import uuid as _uuid
+import dask.array as _dsa
 
+import xarray as _xr
 
 class projection():
 
@@ -62,12 +65,15 @@ class projection():
 
         return None
 
-    def run(self, data, mask_value=None, outtype='ndarray'):
+    def run(self, data, mask_value=None, outtype='ndarray',
+            xdim='lon', ydim='lat', zdim='depth', timedim='time',
+            memberdim='member'):
+
         ''' run the projection
         var : str
-        data : numpy.array
+        data : xarray.DataArray
         level : int
-        outtype : ndarray or dataframe
+        outtype : xarray.DataArray
 
         '''
         # TO DO: ideally we'd like to use the src_mask_values property
@@ -86,55 +92,57 @@ class projection():
                                 regrid_method=_ESMF.RegridMethod.BILINEAR,
                                 unmapped_action=_ESMF.UnmappedAction.IGNORE)
 
-        if type(data) != 'numpy.array':
-            data = data.values
+        # check for input data shape
+        if timedim not in data.dims:
+            data = data.expand_dim(dim=timedim)
+        if memberdim not in member.dims:
+            data = data.expand_dim(dim=memberdim)
 
-        if len(data.shape) == 4:  # T,Z,Y,X
-            nframes, nlevels, ny, nx = data.shape
-            nlevels = data.shape[1]
-        elif len(data.shape) == 3:  # Z,Y,X
-            nframes = 1
-            nlevels, ny, nx = data.shape
-        elif len(data.shape) == 2:  # Y,X
-            nframes = 1
-            nlevels = 1
-            ny, nx = data.shape
-        else:
-            print('this will fail')
+        def interp_chunk(data, interpol, km, kt, kz,
+                         mask_value,
+                         member='member', time='time',
+                         depth='lev'):
+            # this is the eager part
+            datain = data.isel({member: km, time: kt, depth: kz}).values
+            datain = datain.tranpose() # needed for ESMPy, could be done more elegantly
+            if mask_value is not None:
+                # ugly fix, cf note above
+                datain[_np.where(datain == mask_value)] = _np.nan
+            # feed it to ESMPy structure
+            field_model.data[:] = datain
+            # run the interpolator
+            field_obs = interpol(field_model, field_obs)
+            data_model_interp = field_obs.data.copy()
+            return data_model_interp
 
-        data = _np.reshape(data, (nframes, nlevels, ny, nx))
+        chunks = (1, 1, 1, self.nobs)
+        nmem = len(data[memberdim])
+        nrec = len(data[timedim])
+        nlev = len(data[zdim])
+        shape = (nmem, nt, nz, self.nobs)
 
-        data_out = _np.empty((nframes, nlevels, self.nobs))
+        name = 'chunk-' + _uuid.uuid4()
+        dsk = {(name, mem, rec, lev, 0, 0): (interp_chunk, lev, rec, mem)
+            for lev in range(nlev)
+            for rec in range(nrec)}
+            for mem in range(nmem)}
 
-        df_out = pd.DataFrame()
+        out = _dsa.Array(dsk, name, chunks,
+                         dtype=_np.dtype('float'), shape=shape)
 
-        for kframe in _np.arange(nframes):
-            for klevel in _np.arange(nlevels):
-                datain = data[kframe, klevel, :, :].transpose()
-                if mask_value is not None:
-                    # ugly fix, cf note above
-                    datain[_np.where(datain == mask_value)] = _np.nan
 
-                field_model.data[:] = datain
-
-                # run the interpolator
-                field_obs = interpol(field_model, field_obs)
-                data_model_interp = field_obs.data.copy()
-
-                data_out[kframe, klevel, :] = data_model_interp
-
-                tmp = {'lon_stations': self.lon_obs,
-                       'lat_stations': self.lat_obs,
-                       'data_stations': data_out[kframe, klevel, :]}
-
-                df = pd.DataFrame(tmp)
-                df_out = pd.concat([df_out, df])
+#                tmp = {'lon_stations': self.lon_obs,
+#                       'lat_stations': self.lat_obs,
+#                       'data_stations': data_out[kframe, klevel, :]}
+#
 
         field_model.destroy()
         field_obs.destroy()
         interpol.destroy()
 
+        # need to add coords
+        xout = _xr.DataArray(data=out, dims=(memberdim, timedim, zdim, 'station'))
         if outtype == 'ndarray':
-            return data_out
-        elif outtype == 'dataframe':
-            return df_out
+            return xout.compute()
+        elif outtype == 'xarray':
+            return xout

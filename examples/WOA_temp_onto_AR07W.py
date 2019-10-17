@@ -17,19 +17,19 @@ proj = lib_easy_coloc.projection(ar07w['lon'].values,ar07w['lat'].values,grid=ds
                                  from_global=False)
 
 # run the projection on the WOA analyzed temperature (t_an)
-fld = proj.run(ds['t_an'][:])
+fld = proj.run(ds['t_an'])
 
 
 plt.figure(figsize=[6,6])
 m = plt.axes(projection=cart.crs.PlateCarree())
-m.scatter(ar07w['lon'].values,ar07w['lat'].values,c=fld[0,0,:])
+m.scatter(ar07w['lon'].values,ar07w['lat'].values,c=fld[0,0,0,:])
 m.coastlines()
 m.add_feature(cart.feature.LAND, facecolor='0.75')
 m.set_extent([-75, -35, 35, 65], crs=cart.crs.PlateCarree())
 gl = m.gridlines(draw_labels=True)
 
 plt.figure(figsize=[6,6])
-plt.contourf(ar07w['lat'].values,-ds['depth'],fld[0,:,:],30,cmap=cm.gist_ncar)
+plt.contourf(ar07w['lat'].values,-ds['depth'],fld[0,0,:,:],30,cmap=cm.gist_ncar)
 plt.colorbar()
 plt.title('WOA temperature at AR07W section')
 plt.show()

@@ -94,63 +94,66 @@ class projection():
 
         # check for input data shape
         if timedim not in data.dims:
-            data = data.expand_dim(dim=timedim)
-        if memberdim not in member.dims:
-            data = data.expand_dim(dim=memberdim)
-
-        def interp_chunk(data, interpol, km, kt, kz,
-                         mask_value,
-                         member='member', time='time',
-                         depth='lev'):
-
-            # create field object for model data
-            field_model_local = _ESMF.Field(self.model_grid,
-                                            staggerloc=_ESMF.StaggerLoc.CENTER)
-            # create field object for observation locations
-            field_obs_local = _ESMF.Field(self.locstream_obs)
-            # this is the eager part
-            datain = data.isel({member: km, time: kt, depth: kz}).values
-            datain = datain.tranpose() # needed for ESMPy, could be done more elegantly
-            if mask_value is not None:
-                # ugly fix, cf note above
-                datain[_np.where(datain == mask_value)] = _np.nan
-            # feed it to ESMPy structure
-            field_model_local.data[:] = datain
-            # run the interpolator
-            field_obs_local = interpol(field_model_local, field_obs_local)
-            data_model_interp = field_obs_local.data.copy()
-            field_model_local.destroy()
-            field_obs_local.destroy()
-            return data_model_interp
+            data = data.expand_dims(dim=timedim)
+        if memberdim not in data.dims:
+            data = data.expand_dims(dim=memberdim)
 
         chunks = (1, 1, 1, self.nobs)
         nmem = len(data[memberdim])
         nrec = len(data[timedim])
         nlev = len(data[zdim])
-        shape = (nmem, nt, nz, self.nobs)
+        shape = (nmem, nrec, nlev, self.nobs)
 
-        name = 'chunk-' + _uuid.uuid4()
-        dsk = {(name, mem, rec, lev, 0, 0): (interp_chunk, lev, rec, mem)
-            for lev in range(nlev)
-            for rec in range(nrec)
-            for mem in range(nmem)}
+        def compute_chunk(lev, rec, mem):
+            data2d = data.isel({memberdim: mem, timedim: rec, zdim: lev}).values
+            #print(data2d)
+            return self.interp_chunk(data2d, interpol, mask_value)[None, None]
 
-        out = _dsa.Array(dsk, name, chunks,
-                         dtype=_np.dtype('float'), shape=shape)
-
-
-#                tmp = {'lon_stations': self.lon_obs,
-#                       'lat_stations': self.lat_obs,
-#                       'data_stations': data_out[kframe, klevel, :]}
+# this should work but crashes weirdly
+#        dsk = {(data.name, mem, rec, lev, 0): (compute_chunk, lev, rec, mem)
+#            for lev in range(nlev)
+#            for rec in range(nrec)
+#            for mem in range(nmem)}
 #
+#        out = _dsa.Array(dsk, data.name, chunks,
+#                         dtype=_np.dtype('float'), shape=shape)
+
+        # try a dirty loop
+        npout = _np.empty(shape)
+        for mem in range(nmem):
+            for rec in range(nrec):
+                for lev in range(nlev):
+                    npout[mem, rec, lev,:] = compute_chunk(lev, rec, mem)
 
         field_model.destroy()
         field_obs.destroy()
         interpol.destroy()
 
         # need to add coords
-        xout = _xr.DataArray(data=out, dims=(memberdim, timedim, zdim, 'station'))
+        #xout = _xr.DataArray(data=out, dims=(memberdim, timedim, zdim, 'station'))
+        xout = _xr.DataArray(data=npout, dims=(memberdim, timedim, zdim, 'station'))
         if outtype == 'ndarray':
-            return xout.compute()
+            return xout.values
         elif outtype == 'xarray':
             return xout
+
+    def interp_chunk(self, data2d, interpol, mask_value):
+ 
+        # create field object for model data
+        field_model_local = _ESMF.Field(self.model_grid,
+                                        staggerloc=_ESMF.StaggerLoc.CENTER)
+        # create field object for observation locations
+        field_obs_local = _ESMF.Field(self.locstream_obs)
+        # this is the eager part
+        data2d = data2d.transpose() # needed for ESMPy, could be done more elegantly
+        if mask_value is not None:
+            # ugly fix, cf note above
+            data2d[_np.where(data2d == mask_value)] = _np.nan
+        # feed it to ESMPy structure
+        field_model_local.data[:] = data2d
+        # run the interpolator
+        field_obs_local = interpol(field_model_local, field_obs_local)
+        data_model_interp = field_obs_local.data.copy()
+        field_model_local.destroy()
+        field_obs_local.destroy()
+        return data_model_interp

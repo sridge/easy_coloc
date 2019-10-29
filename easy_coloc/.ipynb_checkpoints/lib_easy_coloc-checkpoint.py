@@ -3,68 +3,68 @@ import numpy as _np
 import pandas as pd
 
 
-def grid_create_from_coordinates_periodic(longitudes, latitudes, lon_corners=False, lat_corners=False,
-                                          corners=False, domask=False):
-    """
-    Create a 2 dimensional periodic Grid using the 'longitudes' and 'latitudes'.
-    :param longitudes: longitude coordinate values at cell centers
-    :param latitudes: latitude coordinate values at cell centers
-    :param lon_corners: longitude coordinate values at cell corners
-    :param lat_corners: latitude coordinate values at cell corners
-    :param corners: boolean to determine whether or not to add corner coordinates to this grid
-    :param domask: boolean to determine whether to set an arbitrary mask or not
-    :return: grid
-    """
-#------------------------------------------
-# source: http://www.earthsystemmodeling.org/esmf_releases/public/last/esmpy_doc/html/examples.html#create-a-periodic-grid
-#------------------------------------------
-    [lon, lat] = [0, 1]
-
-    # create a grid given the number of grid cells in each dimension the center stagger location is allocated
-    max_index = np.array([len(longitudes), len(latitudes)])
-    grid = ESMF.Grid(max_index, num_peri_dims=1, staggerloc=[ESMF.StaggerLoc.CENTER])
-
-    # set the grid coordinates using numpy arrays, parallel case is handled using grid bounds
-    gridXCenter = grid.get_coords(lon)
-    lon_par = longitudes[grid.lower_bounds[ESMF.StaggerLoc.CENTER][lon]:grid.upper_bounds[ESMF.StaggerLoc.CENTER][lon]]
-    gridXCenter[...] = lon_par.reshape((lon_par.size, 1))
-
-    gridYCenter = grid.get_coords(lat)
-    lat_par = latitudes[grid.lower_bounds[ESMF.StaggerLoc.CENTER][lat]:grid.upper_bounds[ESMF.StaggerLoc.CENTER][lat]]
-    gridYCenter[...] = lat_par.reshape((1, lat_par.size))
-
-    # create grid corners in a slightly different manner to account for the bounds format common in CF-like files
-    if corners:
-        grid.add_coords([ESMF.StaggerLoc.CORNER])
-        lbx = grid.lower_bounds[ESMF.StaggerLoc.CORNER][lon]
-        ubx = grid.upper_bounds[ESMF.StaggerLoc.CORNER][lon]
-        lby = grid.lower_bounds[ESMF.StaggerLoc.CORNER][lat]
-        uby = grid.upper_bounds[ESMF.StaggerLoc.CORNER][lat]
-
-        gridXCorner = grid.get_coords(lon, staggerloc=ESMF.StaggerLoc.CORNER)
-        for i0 in range(ubx - lbx - 1):
-            gridXCorner[i0, :] = lon_corners[i0+lbx, 0]
-        gridXCorner[i0 + 1, :] = lon_corners[i0+lbx, 1]
-
-        gridYCorner = grid.get_coords(lat, staggerloc=ESMF.StaggerLoc.CORNER)
-        for i1 in range(uby - lby - 1):
-            gridYCorner[:, i1] = lat_corners[i1+lby, 0]
-        gridYCorner[:, i1 + 1] = lat_corners[i1+lby, 1]
-
-    # add an arbitrary mask
-    if domask:
-        mask = grid.add_item(ESMF.GridItem.MASK)
-        mask[:] = 1
-        mask[np.where((1.75 <= gridXCenter.any() < 2.25) &
-                      (1.75 <= gridYCenter.any() < 2.25))] = 0
-
-    return grid
-
 #------------------------------------------------------------------------------
 #
 #------------------------------------------------------------------------------
 
 class projection():
+    
+    def grid_create_from_coordinates_periodic(longitudes, latitudes, lon_corners=False, lat_corners=False,
+                                          corners=False, domask=False):
+        """
+        Create a 2 dimensional periodic Grid using the 'longitudes' and 'latitudes'.
+        :param longitudes: longitude coordinate values at cell centers
+        :param latitudes: latitude coordinate values at cell centers
+        :param lon_corners: longitude coordinate values at cell corners
+        :param lat_corners: latitude coordinate values at cell corners
+        :param corners: boolean to determine whether or not to add corner coordinates to this grid
+        :param domask: boolean to determine whether to set an arbitrary mask or not
+        :return: grid
+        """
+    #------------------------------------------
+    # source: http://www.earthsystemmodeling.org/esmf_releases/public/last/esmpy_doc/html/examples.html#create-a-periodic-grid
+    #------------------------------------------
+        [lon, lat] = [0, 1]
+
+        # create a grid given the number of grid cells in each dimension the center stagger location is allocated
+        max_index = np.array([len(longitudes), len(latitudes)])
+        grid = ESMF.Grid(max_index, num_peri_dims=1, staggerloc=[ESMF.StaggerLoc.CENTER])
+
+        # set the grid coordinates using numpy arrays, parallel case is handled using grid bounds
+        gridXCenter = grid.get_coords(lon)
+        lon_par = longitudes[grid.lower_bounds[ESMF.StaggerLoc.CENTER][lon]:grid.upper_bounds[ESMF.StaggerLoc.CENTER][lon]]
+        gridXCenter[...] = lon_par.reshape((lon_par.size, 1))
+
+        gridYCenter = grid.get_coords(lat)
+        lat_par = latitudes[grid.lower_bounds[ESMF.StaggerLoc.CENTER][lat]:grid.upper_bounds[ESMF.StaggerLoc.CENTER][lat]]
+        gridYCenter[...] = lat_par.reshape((1, lat_par.size))
+
+        # create grid corners in a slightly different manner to account for the bounds format common in CF-like files
+        if corners:
+            grid.add_coords([ESMF.StaggerLoc.CORNER])
+            lbx = grid.lower_bounds[ESMF.StaggerLoc.CORNER][lon]
+            ubx = grid.upper_bounds[ESMF.StaggerLoc.CORNER][lon]
+            lby = grid.lower_bounds[ESMF.StaggerLoc.CORNER][lat]
+            uby = grid.upper_bounds[ESMF.StaggerLoc.CORNER][lat]
+
+            gridXCorner = grid.get_coords(lon, staggerloc=ESMF.StaggerLoc.CORNER)
+            for i0 in range(ubx - lbx - 1):
+                gridXCorner[i0, :] = lon_corners[i0+lbx, 0]
+            gridXCorner[i0 + 1, :] = lon_corners[i0+lbx, 1]
+
+            gridYCorner = grid.get_coords(lat, staggerloc=ESMF.StaggerLoc.CORNER)
+            for i1 in range(uby - lby - 1):
+                gridYCorner[:, i1] = lat_corners[i1+lby, 0]
+            gridYCorner[:, i1 + 1] = lat_corners[i1+lby, 1]
+
+        # add an arbitrary mask
+        if domask:
+            mask = grid.add_item(ESMF.GridItem.MASK)
+            mask[:] = 1
+            mask[np.where((1.75 <= gridXCenter.any() < 2.25) &
+                          (1.75 <= gridYCenter.any() < 2.25))] = 0
+
+        return grid
 
     def __init__(self, lon_obs, lat_obs, grid=None,
                  lon_grid=None, lat_grid=None,
